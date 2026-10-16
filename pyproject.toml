@@ -1,0 +1,21 @@
+[project]
+name = "python-ui-practice"
+version = "0.1.0"
+description = "Test project for python UI integration"
+authors = [
+    {name = "Evan LeClair",email = "103522116+Evandleclair@users.noreply.github.com"}
+]
+license = "Creative Commons Zero v1.0 Universal"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "pyqt5 (>=5.15.11,<6.0.0)",
+    "pyautogui (>=0.9.54,<0.10.0)",
+    "numpy (>=2.5.4,<3.0.0)",
+    "opencv-python (>=5.0.0.93,<6.0.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
