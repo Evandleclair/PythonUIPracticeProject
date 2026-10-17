@@ -2,23 +2,27 @@
 from PyQt5.QtWidgets import QGridLayout, QMainWindow, QPushButton, QWidget, QLabel, QLayout
 
 from Windows.helpers import Color, QWidgetHelper, GridUIElement
+import logging, datetime
 # this class handles the main window, and is the "Central node" that calls all other necessary classes and modules. 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        logger = self.createLogger()
+        try:
+            self.button_checked = True
+            self.setWindowTitle("Python UI Practice")
 
-        self.button_checked = True
-        self.setWindowTitle("Python UI Practice")
+            objList = self.generateLayoutObjects()
+            layout = QWidgetHelper.GenerateGridLayout(objList)
+            layout.setContentsMargins(0,0,0,0)
 
-        objList = self.generateLayoutObjects()
-        layout = QWidgetHelper.GenerateGridLayout(objList)
-        layout.setContentsMargins(0,0,0,0)
+            container = QWidget()
+            container.setLayout(layout)
 
-        container = QWidget()
-        container.setLayout(layout)
-
-        # Set the central widget of the Window.
-        self.setCentralWidget(container)
+            # Set the central widget of the Window.
+            self.setCentralWidget(container)
+        except:
+            logger.error('and error occured. Logging will be more verbose in future versions')
 
     def button_pressed(self,pText):
         print(pText)
@@ -26,6 +30,13 @@ class MainWindow(QMainWindow):
     def the_button_was_released(self):
         self.button_checked = self.button.isChecked();
         print(self.button_checked)
+
+    def createLogger(self):
+        returnLogger = logging.getLogger(__name__)
+        logging.basicConfig(filename='PythonRandomSoundLog.log', encoding='utf-8', level=logging.DEBUG)
+        now = datetime.datetime.now()
+        returnLogger.debug('Logger spun up at {now}')
+        return returnLogger
 
     def defineLabel(self,pText):
         self.label = QLabel(pText)
