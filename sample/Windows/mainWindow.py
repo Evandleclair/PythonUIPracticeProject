@@ -1,10 +1,40 @@
 
 from PyQt5.QtWidgets import QGridLayout, QMainWindow, QPushButton, QWidget, QLabel, QLayout
 
-from Windows.helpers import Color, QWidgetHelper, GridUIElement
+from Windows.helpers import Color, QWidgetHelper, GridUIElement, DataHelpers
 import logging, datetime
+
 # this class handles the main window, and is the "Central node" that calls all other necessary classes and modules. 
 class MainWindow(QMainWindow):
+    
+    maxInterval = 30 ##maximum interval between sound effects
+    loopStarted = False #whether the program is active or not. 
+    loopPaused = False 
+    quietChance = 25
+    mediumChance = 25
+    loudChance = 25
+    specialChance = 25 
+    volume = 100.0
+    sourceFolder = "test"
+
+    volSliderLabels = []
+
+    chanceVariables = {
+        0 : quietChance,
+        1 : mediumChance,
+        2 : loudChance,
+        3 : specialChance
+        }
+    
+    chanceSliders = {}
+
+    chanceNames = {
+        0 : "Quiet noise chance",
+        1 : "Medium noise chance",
+        2 : "Loud noise chance",
+        3 : "Special noise chance"
+        }
+    
     def __init__(self):
         super().__init__()
         logger = self.createLogger()
@@ -21,11 +51,45 @@ class MainWindow(QMainWindow):
 
             # Set the central widget of the Window.
             self.setCentralWidget(container)
-        except:
-            logger.error('and error occured. Logging will be more verbose in future versions')
+        except Exception as e:
+            logger.error(f"Exception Occured: {e}")
 
     def button_pressed(self,pText):
         print(pText)
+
+    def volume_change(self,p):
+        lower =0
+        upper = 100
+        val = lower if p < lower else upper if p > upper else p
+        self.volume = val
+        print(p)
+        
+    def chance_change(self,sliderId,p):
+        try:
+            self.chanceVariables[sliderId]=p #update changed slider to new value
+            totalChance = DataHelpers.combine_values(self.chanceVariables)
+
+            while (totalChance>100):
+                otherSliders = DataHelpers.exclude_key(self.chanceVariables,sliderId)
+
+                if not otherSliders:
+                    break
+
+                max_other_key = max(otherSliders, key=otherSliders.get)
+                self.chanceVariables[max_other_key] -= 1
+             
+                totalChance = DataHelpers.combine_values(self.chanceVariables)
+                self.chanceSliders[max_other_key].setValue(self.chanceVariables[max_other_key]) #update slider with its new value
+            self.update_volume_labels #once all calculation is done, update the labels.
+        except Exception as e:
+                self.logger.error(f"Exception Occured: {e}")
+          
+    def update_volume_labels(self):
+        for id, label in self.volSliderLabels.items():
+            num = self.chanceVariables[id]
+            label.setText(num)
+            print(num)
+
 
     def the_button_was_released(self):
         self.button_checked = self.button.isChecked();
@@ -54,7 +118,7 @@ class MainWindow(QMainWindow):
         ))
 
         objectList.append(GridUIElement(
-            QWidgetHelper.GenerateDial(lambda: self.do_nothing),
+            QWidgetHelper.GenerateDial(self.volume_change),
             0,
             1,
         ))
@@ -89,9 +153,17 @@ class MainWindow(QMainWindow):
 
     
     def createSliderStack(self):
-       sliderStack = []
-       sliderStack.append(QWidgetHelper.GenerateChanceSlider("Loud chance",lambda: self.do_nothing()))
-       sliderStack.append(QWidgetHelper.GenerateChanceSlider("Normal volume chance",lambda: self.do_nothing()))
-       sliderStack.append(QWidgetHelper.GenerateChanceSlider("Quiet volume chance",lambda: self.do_nothing()))
-       sliderStack.append(QWidgetHelper.GenerateChanceSlider("Special noise chance",lambda: self.do_nothing()))
-       return sliderStack
+        sliderStack = []
+       #sliderStack.append(QWidgetHelper.GenerateChanceSlider("",lambda: self.do_nothing()))
+
+        for i in range(0, len(self.chanceVariables), 1):
+            chanceSlider, volumeLabel, sliderWidget = QWidgetHelper.GenerateChanceSlider(
+                self.chanceNames[i],
+                self.chanceVariables[i], 
+                lambda value, idx=i: self.chance_change(idx, value)
+            )
+            self.volSliderLabels.append(volumeLabel)
+            sliderStack.append(chanceSlider)
+            self.chanceSliders[i] = sliderWidget #store this so it can be referenced by other functions
+
+        return sliderStack
