@@ -1,5 +1,5 @@
 from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout
+from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QDialog 
 from PyQt5.QtCore import Qt
 
 class Color(QWidget):
@@ -25,11 +25,12 @@ class QWidgetHelper():
         return returnWidget
     
     @staticmethod
-    def GenerateSlider(pEvent, pMin, pMax):
+    def GenerateSlider(pEvent,pInitialValue, pMin, pMax):
         returnWidget = QSlider(Qt.Horizontal)
         returnWidget.sliderMoved.connect(pEvent)
         returnWidget.setMinimum(pMin)
         returnWidget.setMaximum(pMax)
+        returnWidget.setValue(pInitialValue)
         return returnWidget
 
     @staticmethod
@@ -51,12 +52,16 @@ class QWidgetHelper():
         return returnWidget
 
     @staticmethod
-    def GenerateChanceSlider(pLabelText, pEvent):
+    def GenerateChanceSlider(pLabelText, pInitialValue, pEvent):
         widgetList=[]
-        widgetList.append(QWidgetHelper.GenerateLabel(pLabelText))
-        widgetList.append(QWidgetHelper.GenerateSlider(pEvent,0,100))
+        textLabel = QWidgetHelper.GenerateLabel(pLabelText)
+        volNumberLabel = QWidgetHelper.GenerateLabel("0")
+        sliderWidget = QWidgetHelper.GenerateSlider(pEvent,pInitialValue,0,100)
+        widgetList.append(textLabel)
+        widgetList.append(sliderWidget)
+        widgetList.append(volNumberLabel)
         returnWidget = QWidgetHelper.GenerateHBoxLayout(widgetList)
-        return returnWidget
+        return returnWidget, volNumberLabel, sliderWidget
     
     @staticmethod 
     def GenerateHBoxLayout(widgets =[],*args):
@@ -88,12 +93,26 @@ class QWidgetHelper():
                 retLayout.addLayout(obj.element,obj.row,obj.col)      
                 
         return retLayout
-  
-    
+
     @staticmethod
-    def GenerateDial(pEvent):
+    def GenerateDial(pVolumeEvent):
         returnWidget = QDial()
+        returnWidget.setRange(0,100)
+        returnWidget.setSingleStep(1)
+        returnWidget.sliderMoved.connect(pVolumeEvent)
         return returnWidget
+
+class DataHelpers():
+    def exclude_key(pDictionary, pKeysToExclude):
+       if not isinstance(pKeysToExclude, (list, set, tuple, dict)):
+        pKeysToExclude = {pKeysToExclude}
+        return {x: pDictionary[x] for x in pDictionary if x not in pKeysToExclude}
+
+    def combine_values(pDictionary):
+        returnValue = 0
+        for key, value in pDictionary.items():
+            returnValue += value
+        return returnValue
 
 class GridUIElement():
     def __init__(self, pElement, pRow, pCol):
