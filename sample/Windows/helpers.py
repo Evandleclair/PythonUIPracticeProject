@@ -1,7 +1,8 @@
 from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QDialog 
+from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QDoubleSpinBox,QMessageBox 
 from PyQt5.QtCore import Qt
-
+from pathlib import Path
+import os, random
 class Color(QWidget):
     def __init__(self, pColor):
         super().__init__()
@@ -13,13 +14,13 @@ class Color(QWidget):
 
 class QWidgetHelper():
     @staticmethod
-    def GenerateButton(pText,pEvent):
+    def generate_button(pText,pEvent):
         returnWidget = QPushButton(pText)
         returnWidget.clicked.connect(pEvent)
         return returnWidget
 
     @staticmethod
-    def GenerateButton(pText,pEvent):
+    def generate_button(pText,pEvent):
         returnWidget = QPushButton(pText)
         returnWidget.clicked.connect(pEvent)
         return returnWidget
@@ -44,15 +45,34 @@ class QWidgetHelper():
         return returnWidget
 
     @staticmethod
-    def GenerateVolumeSection(pLabelText, pVolumeVariable):
+    def generate_volume_section(pLabelText, pVolumeVariable):
         widgetList = []
         widgetList.append(QWidgetHelper.GenerateLabel(pLabelText))
         widgetList.append(QWidgetHelper.VolumeLabel(pVolumeVariable))
-        returnWidget = QWidgetHelper.GenerateVBoxLayout(widgetList)
+        returnWidget = QWidgetHelper.generate_vbox_layout(widgetList)
         return returnWidget
 
     @staticmethod
-    def GenerateChanceSlider(pLabelText, pInitialValue, pEvent):
+    def generate_interval_section(pMinInterval, pMaxInterval):
+        widgetList = []
+        minLabel = QWidgetHelper.GenerateLabel("Min Interval")
+        maxLabel = QWidgetHelper.GenerateLabel("Max Interval")
+        widgetList.append(QWidgetHelper.generate_hbox_layout({minLabel,pMinInterval}))
+        widgetList.append(QWidgetHelper.generate_hbox_layout({maxLabel,pMaxInterval}))
+        returnWidget = QWidgetHelper.generate_hbox_layout(widgetList)
+        return returnWidget
+
+    @staticmethod 
+    def generate_interval_spin(pIntervalVar,pIntervalEvent):
+        returnwidget = QDoubleSpinBox()
+        returnwidget.setGeometry(100,100,140,40)
+        returnwidget.setValue(pIntervalVar)
+        returnwidget.valueChanged.connect(pIntervalEvent)
+        returnwidget.setMinimum(0)
+        return returnwidget
+
+    @staticmethod
+    def generate_chance_slider(pLabelText, pInitialValue, pEvent):
         widgetList=[]
         textLabel = QWidgetHelper.GenerateLabel(pLabelText)
         volNumberLabel = QWidgetHelper.GenerateLabel("0")
@@ -60,11 +80,11 @@ class QWidgetHelper():
         widgetList.append(textLabel)
         widgetList.append(sliderWidget)
         widgetList.append(volNumberLabel)
-        returnWidget = QWidgetHelper.GenerateHBoxLayout(widgetList)
+        returnWidget = QWidgetHelper.generate_hbox_layout(widgetList)
         return returnWidget, volNumberLabel, sliderWidget
     
     @staticmethod 
-    def GenerateHBoxLayout(widgets =[],*args):
+    def generate_hbox_layout(widgets =[],*args):
         returnWidget = QHBoxLayout()
         for widget in widgets:
             if isinstance(widget, QWidget):
@@ -74,7 +94,7 @@ class QWidgetHelper():
         return returnWidget
 
     @staticmethod 
-    def GenerateVBoxLayout(widgets =[], *args):
+    def generate_vbox_layout(widgets =[], *args):
         returnWidget = QVBoxLayout()
         for widget in widgets:
             if isinstance(widget, QWidget):
@@ -95,12 +115,18 @@ class QWidgetHelper():
         return retLayout
 
     @staticmethod
-    def GenerateDial(pVolumeEvent):
+    def generate_dial(pVolumeEvent):
         returnWidget = QDial()
         returnWidget.setRange(0,100)
         returnWidget.setSingleStep(1)
         returnWidget.sliderMoved.connect(pVolumeEvent)
         return returnWidget
+    
+    @staticmethod
+    def generate_and_show_alert(pText):
+        dlg = QMessageBox()
+        dlg.setText(pText)
+        dlg.exec()
 
 class DataHelpers():
     def exclude_key(pDictionary, pKeysToExclude):
@@ -113,9 +139,80 @@ class DataHelpers():
         for key, value in pDictionary.items():
             returnValue += value
         return returnValue
+    
+    def pick_random(pDictionary):
+        chanceDictionary = DataHelpers.generate_chance_dictionary(pDictionary)
+
+        print(chanceDictionary.items())
+
+        if chanceDictionary[0][2] is None:
+            raise ValueError
+        while True:
+            r = random.random()
+            print(f"random chance was {r}")
+            for key, value in chanceDictionary.items():
+              
+                lowOdds = value[0]
+                highOdds = value[1]
+                print(f"checking {key} with odds of {lowOdds} and {highOdds}")
+                if lowOdds <= r <highOdds:
+                    print(f"which was between {lowOdds} and {highOdds} resulting in {key}")
+                    return key
+
+    @staticmethod 
+    def generate_chance_dictionary(pDictionary):
+        x=0.0
+        chanceDictionary = {}
+        for id, chance in pDictionary.items():
+            lowOdds = x/100
+            highOdds = (x + chance)/100
+            newTuple = (lowOdds, highOdds, id)
+            chanceDictionary[id]=(newTuple)
+            x+=chance
+        return chanceDictionary
+
+
 
 class GridUIElement():
     def __init__(self, pElement, pRow, pCol):
         self.element = pElement
         self.row = pRow
         self.col = pCol
+
+class DirectoryHelper():
+
+    def __init__(self, project_name="SilenceBreaker", default_folder_name="LaughTrack"):
+        self.home_dir = Path.home()
+        self.project_name = project_name
+        self.default_folder_name = default_folder_name
+        self.documents_dir = self.home_dir / "Documents" / self.project_name
+        self.current_dir = self.documents_dir
+
+    def establish_core_directories(self, pChanceDirectories):
+        self.documents_dir.mkdir(parents=True, exist_ok=True)
+        default_noise_folder = self.documents_dir / self.default_folder_name
+        default_noise_folder.mkdir(parents=True,exist_ok=True)
+        self.current_dir = default_noise_folder
+        self.create_sound_subfolders(pChanceDirectories)
+
+
+    def get_random_file(self, pSubFolder):
+        p = Path(self.current_dir / pSubFolder).glob('**/*')
+        files = [x for x in p if x.is_file()]
+        return random.choice(files)
+
+    def create_sound_subfolders(self, pChanceDirectories):
+        for subDir in pChanceDirectories.values():
+            noise_subfolder = self.current_dir / subDir
+            noise_subfolder.mkdir(parents=True,exist_ok=True)
+
+    def check_sound_folder_exists(self):
+        print(self.current_dir)
+        return os.path.isdir(self.current_dir)
+
+    def get_working_directory(self):
+        return self.current_dir
+
+
+        
+
