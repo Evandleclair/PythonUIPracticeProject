@@ -16,6 +16,11 @@ class MainWindow(QMainWindow):
 
     myDirectoryHelper = None
     myPlayer = None
+    myTimer = None
+    myIntervalTimer = None
+
+    stopEvent = None
+
     loopStarted = False #whether the program is active or not. 
     loopPaused = False 
 
@@ -37,7 +42,7 @@ class MainWindow(QMainWindow):
         2 : loudChance,
         3 : specialChance
         }
-
+    elementsToLock = [] #UI elements that should be marked "read only" when the loop is ongoing
     chanceDirectories = {
             0 : "q",
             1 : "m",
@@ -62,6 +67,7 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Python UI Practice")
             self.establish_directories()
             self.myPlayer = SoundPlayer()
+            self.myTimer = RepeatTimer()
             objList = self.generate_layout_objects()
             layout = QWidgetHelper.GenerateGridLayout(objList)
             layout.setContentsMargins(0,0,0,0)
@@ -80,17 +86,22 @@ class MainWindow(QMainWindow):
 
     def start_button_pressed(self):
         if (self.myDirectoryHelper.check_sound_folder_exists()):
-           self.invoke_sound()
+           self.start_timer()
         else:
              QWidgetHelper.generate_and_show_alert("directory no exist")
 
     def stop_button_pressed(self):
         self.myPlayer.stop_sound()
+        self.stopEvent()
 
     def establish_directories(self):
         self.myDirectoryHelper = DirectoryHelper()
         self.myDirectoryHelper.establish_core_directories(self.chanceDirectories)
 
+    def start_timer(self):
+        self.myTimer.set_interval(self.minIntervalSeconds,"min")
+        self.myTimer.set_interval(self.maxIntervalSeconds,"max")
+        self.stopEvent = self.myTimer.run_after_interval(lambda: self.invoke_sound())
 
     def volume_change(self,p):
         lower =0
@@ -137,9 +148,16 @@ class MainWindow(QMainWindow):
 
     def interval_update(self, pTypeFlag, pIntervalValue):
         if pTypeFlag == "min":
+            if (pIntervalValue>=self.maxIntervalSeconds-1):
+                pIntervalValue = self.maxIntervalSeconds-1
+                self.minIntervalWidget.setValue(pIntervalValue)
             self.minIntervalSeconds = pIntervalValue
         elif pTypeFlag =="max":
+            if (pIntervalValue<=self.minIntervalSeconds+1):
+                pIntervalValue = self.minIntervalSeconds+1
+                self.maxIntervalwidget.setValue(pIntervalValue)
             self.maxIntervalSeconds = pIntervalValue
+        self.myTimer.set_interval(pIntervalValue,pTypeFlag)
 
     def invoke_sound(self):
         activeSubfolder = self.chanceDirectories[DataHelpers.pick_random(self.chanceVariables)]

@@ -1,5 +1,5 @@
 from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QDoubleSpinBox,QMessageBox 
+from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QSpinBox,QMessageBox 
 from PyQt5.QtCore import Qt
 from pathlib import Path
 import os, random
@@ -64,7 +64,7 @@ class QWidgetHelper():
 
     @staticmethod 
     def generate_interval_spin(pIntervalVar,pIntervalEvent):
-        returnwidget = QDoubleSpinBox()
+        returnwidget = QSpinBox()
         returnwidget.setGeometry(100,100,140,40)
         returnwidget.setValue(pIntervalVar)
         returnwidget.valueChanged.connect(pIntervalEvent)
