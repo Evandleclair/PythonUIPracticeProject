@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        logging.basicConfig(filename='PythonRandomSoundLog.log', encoding='utf-8', level=logging.DEBUG)
+        logging.basicConfig(filename='SilenceBreaker.log', encoding='utf-8', level=logging.DEBUG)
         try:
             self.button_checked = True
             self.setWindowTitle("Python UI Practice")

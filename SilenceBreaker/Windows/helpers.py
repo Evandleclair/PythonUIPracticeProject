@@ -2,7 +2,7 @@ from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QSpinBox,QMessageBox 
 from PyQt5.QtCore import Qt
 from pathlib import Path
-import os, random
+import os, random, zipfile
 class Color(QWidget):
     def __init__(self, pColor):
         super().__init__()
@@ -189,17 +189,31 @@ class DirectoryHelper():
         self.current_dir = self.documents_dir
 
     def establish_core_directories(self, pChanceDirectories):
+        establishSounds = False
         self.documents_dir.mkdir(parents=True, exist_ok=True)
         default_noise_folder = self.documents_dir / self.default_folder_name
+
+        if not default_noise_folder.exists():
+            establishSounds = True
+
         default_noise_folder.mkdir(parents=True,exist_ok=True)
+
+        if establishSounds:
+            self.copy_sounds_to_default_directory()
+
         self.current_dir = default_noise_folder
         self.create_sound_subfolders(pChanceDirectories)
 
+    def copy_sounds_to_default_directory(self):
+        print("not implemented")
 
     def get_random_file(self, pSubFolder):
         p = Path(self.current_dir / pSubFolder).glob('**/*')
         files = [x for x in p if x.is_file()]
         return random.choice(files)
+
+    def etablish_new_sound_folder(self, pNewDirectoryPath):
+        print("not implemented")
 
     def create_sound_subfolders(self, pChanceDirectories):
         for subDir in pChanceDirectories.values():
