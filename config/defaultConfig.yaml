@@ -5,7 +5,7 @@ chanceDirectories:
        - [2, "l"]
        - [3, "s"]
 
-chanceLabelText: 
+chanceNames: 
        - [0, "Quiet noise chance"]
        - [1, "Medium noise chance"]
        - [2, "Loud noise chance"]
@@ -15,4 +15,5 @@ defaultSettings:
        - ["defaultMinInterval", 5]
        - ["defaultMaxInterval", 15]
        - ["defaultVolume", 50]
+       - ["defaultLogFileName", "SilenceBreaker.log"]
 # end

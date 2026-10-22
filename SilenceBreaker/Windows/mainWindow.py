@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 # this class handles the main window, and is the "Central node" that calls all other necessary classes and modules. 
 class MainWindow(QMainWindow):
     
-    maxIntervalSeconds = 30 ##maximum interval between sound effects in seconds
+    maxIntervalSeconds = None
     minIntervalSeconds = 5 ##minimum interval between sound effects in seconds
 
     minIntervalWidget = None
@@ -26,12 +26,14 @@ class MainWindow(QMainWindow):
 
     currentSoundDirectory=""
     defaultSoundDirectory=""
+    defaultLogFileName=""
 
     quietChance = 25
     mediumChance = 25
     loudChance = 25
     specialChance = 25 
-    volume = 100.0
+    volume = 0.0
+    volumeLabel = None
     sourceFolder = "test"
 
     volSliderLabels = []
@@ -42,32 +44,29 @@ class MainWindow(QMainWindow):
         2 : loudChance,
         3 : specialChance
         }
+    
     elementsToLock = [] #UI elements that should be marked "read only" when the loop is ongoing
-    chanceDirectories = {
-            0 : "q",
-            1 : "m",
-            2 : "l",
-            3 : "s"
-            }
+    chanceDirectories = {}
     
     chanceSliders = {}
 
-    chanceNames = {
-        0 : "Quiet noise chance",
-        1 : "Medium noise chance",
-        2 : "Loud noise chance",
-        3 : "Special noise chance"
-        }
+    chanceNames = {}
     
-    def __init__(self):
+    def __init__(self, pConfig):
         super().__init__()
-        logging.basicConfig(filename='SilenceBreaker.log', encoding='utf-8', level=logging.DEBUG)
+       
         try:
-            self.button_checked = True
+            self.load_config(pConfig)
+            logging.basicConfig(filename=self.defaultLogFileName, encoding='utf-8', level=logging.DEBUG)
+        except Exception as e:
+            print(f'Error {e} occured on initial launch of program')
+        try:
+            #now that the logger is loaded, we can use that for our exceptions instead. 
             self.setWindowTitle("Python UI Practice")
             self.establish_directories()
             self.myPlayer = SoundPlayer()
             self.myTimer = RepeatTimer()
+            self.define_unique_elements() #generate widget items that need to be referred to directly by this controller.
             objList = self.generate_layout_objects()
             layout = QWidgetHelper.GenerateGridLayout(objList)
             layout.setContentsMargins(0,0,0,0)
@@ -80,6 +79,16 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QWidgetHelper.generate_and_show_alert(e)
             logger.error(f"Exception Occured: {e}")
+
+    def load_config(self,pConfig):
+        self.chanceDirectories=dict(pConfig["chanceDirectories"])
+        self.chanceNames=dict(pConfig["chanceNames"])
+
+        defaultSettings=dict(pConfig["defaultSettings"])
+        self.volume = defaultSettings.get("defaultVolume")
+        self.minIntervalSeconds=defaultSettings.get("defaultMinInterval")
+        self.maxIntervalSeconds=defaultSettings.get("defaultMaxInterval")
+        self.defaultLogFileName=defaultSettings.get("defaultLogFileName")
 
     def button_pressed(self,pText):
         print(pText)
@@ -108,7 +117,7 @@ class MainWindow(QMainWindow):
         upper = 100
         val = lower if p < lower else upper if p > upper else p
         self.volume = val
-        print(p)
+        self.volumeLabel.setText(str(val))
         
     def chance_change(self,sliderId,p):
         try:
@@ -173,17 +182,21 @@ class MainWindow(QMainWindow):
     def do_nothing(self):
         print("not implemented")
 
+    def define_unique_elements(self):
+        self.minIntervalWidget = QWidgetHelper.generate_interval_spin(self.minIntervalSeconds,lambda val: self.interval_update("min", val))
+        self.maxIntervalwidget = QWidgetHelper.generate_interval_spin(self.maxIntervalSeconds,lambda val: self.interval_update("max", val))
+        self.volumeLabel =  QWidgetHelper.GenerateLabel(str(self.volume))
+
     def generate_layout_objects(self):
         objectList = []
-
         objectList.append(GridUIElement(
-            QWidgetHelper.generate_volume_section("volume", "100"),
+            QWidgetHelper.generate_volume_section(self.volumeLabel, str(self.volume)),
             0,
             0,
         ))
 
         objectList.append(GridUIElement(
-            QWidgetHelper.generate_dial(self.volume_change),
+            QWidgetHelper.generate_dial(self.volume_change, self.volume),
             0,
             1,
         ))
@@ -214,8 +227,6 @@ class MainWindow(QMainWindow):
 
         ))
 
-        self.minIntervalWidget = QWidgetHelper.generate_interval_spin(self.minIntervalSeconds,lambda val: self.interval_update("min", val))
-        self.maxIntervalwidget = QWidgetHelper.generate_interval_spin(self.maxIntervalSeconds,lambda val: self.interval_update("max", val))
         objectList.append(GridUIElement(
             QWidgetHelper.generate_interval_section(self.minIntervalWidget,self.maxIntervalwidget),
             1,
@@ -227,7 +238,6 @@ class MainWindow(QMainWindow):
     
     def create_slider_stack(self):
         sliderStack = []
-
 
         for i in range(0, len(self.chanceVariables), 1):
             chanceSlider, volumeLabel, sliderWidget = QWidgetHelper.generate_chance_slider(

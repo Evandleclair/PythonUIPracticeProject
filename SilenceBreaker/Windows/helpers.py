@@ -45,10 +45,10 @@ class QWidgetHelper():
         return returnWidget
 
     @staticmethod
-    def generate_volume_section(pLabelText, pVolumeVariable):
+    def generate_volume_section(pLabel, pVolumeVariable):
         widgetList = []
-        widgetList.append(QWidgetHelper.GenerateLabel(pLabelText))
-        widgetList.append(QWidgetHelper.VolumeLabel(pVolumeVariable))
+        widgetList.append(QWidgetHelper.GenerateLabel("Volume"))
+        widgetList.append(pLabel)
         returnWidget = QWidgetHelper.generate_vbox_layout(widgetList)
         return returnWidget
 
@@ -115,10 +115,11 @@ class QWidgetHelper():
         return retLayout
 
     @staticmethod
-    def generate_dial(pVolumeEvent):
+    def generate_dial(pVolumeEvent,pDefaultVolume):
         returnWidget = QDial()
         returnWidget.setRange(0,100)
         returnWidget.setSingleStep(1)
+        returnWidget.setValue(pDefaultVolume)
         returnWidget.sliderMoved.connect(pVolumeEvent)
         return returnWidget
     
@@ -174,10 +175,11 @@ class DataHelpers():
 
 
 class GridUIElement():
-    def __init__(self, pElement, pRow, pCol):
+    def __init__(self, pElement, pRow, pCol, pName = "none"):
         self.element = pElement
         self.row = pRow
         self.col = pCol
+        self.name = pName #unique identifier
 
 class DirectoryHelper():
 
