@@ -1,8 +1,8 @@
 from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QDoubleSpinBox,QMessageBox 
+from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QSpinBox,QMessageBox 
 from PyQt5.QtCore import Qt
 from pathlib import Path
-import os, random
+import os, random, zipfile
 class Color(QWidget):
     def __init__(self, pColor):
         super().__init__()
@@ -45,10 +45,10 @@ class QWidgetHelper():
         return returnWidget
 
     @staticmethod
-    def generate_volume_section(pLabelText, pVolumeVariable):
+    def generate_volume_section(pLabel, pVolumeVariable):
         widgetList = []
-        widgetList.append(QWidgetHelper.GenerateLabel(pLabelText))
-        widgetList.append(QWidgetHelper.VolumeLabel(pVolumeVariable))
+        widgetList.append(QWidgetHelper.GenerateLabel("Volume"))
+        widgetList.append(pLabel)
         returnWidget = QWidgetHelper.generate_vbox_layout(widgetList)
         return returnWidget
 
@@ -64,7 +64,7 @@ class QWidgetHelper():
 
     @staticmethod 
     def generate_interval_spin(pIntervalVar,pIntervalEvent):
-        returnwidget = QDoubleSpinBox()
+        returnwidget = QSpinBox()
         returnwidget.setGeometry(100,100,140,40)
         returnwidget.setValue(pIntervalVar)
         returnwidget.valueChanged.connect(pIntervalEvent)
@@ -115,10 +115,11 @@ class QWidgetHelper():
         return retLayout
 
     @staticmethod
-    def generate_dial(pVolumeEvent):
+    def generate_dial(pVolumeEvent,pDefaultVolume):
         returnWidget = QDial()
         returnWidget.setRange(0,100)
         returnWidget.setSingleStep(1)
+        returnWidget.setValue(pDefaultVolume)
         returnWidget.sliderMoved.connect(pVolumeEvent)
         return returnWidget
     
@@ -174,10 +175,11 @@ class DataHelpers():
 
 
 class GridUIElement():
-    def __init__(self, pElement, pRow, pCol):
+    def __init__(self, pElement, pRow, pCol, pName = "none"):
         self.element = pElement
         self.row = pRow
         self.col = pCol
+        self.name = pName #unique identifier
 
 class DirectoryHelper():
 
@@ -189,17 +191,31 @@ class DirectoryHelper():
         self.current_dir = self.documents_dir
 
     def establish_core_directories(self, pChanceDirectories):
+        establishSounds = False
         self.documents_dir.mkdir(parents=True, exist_ok=True)
         default_noise_folder = self.documents_dir / self.default_folder_name
+
+        if not default_noise_folder.exists():
+            establishSounds = True
+
         default_noise_folder.mkdir(parents=True,exist_ok=True)
+
+        if establishSounds:
+            self.copy_sounds_to_default_directory()
+
         self.current_dir = default_noise_folder
         self.create_sound_subfolders(pChanceDirectories)
 
+    def copy_sounds_to_default_directory(self):
+        print("not implemented")
 
     def get_random_file(self, pSubFolder):
         p = Path(self.current_dir / pSubFolder).glob('**/*')
         files = [x for x in p if x.is_file()]
         return random.choice(files)
+
+    def etablish_new_sound_folder(self, pNewDirectoryPath):
+        print("not implemented")
 
     def create_sound_subfolders(self, pChanceDirectories):
         for subDir in pChanceDirectories.values():

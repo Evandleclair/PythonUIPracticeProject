@@ -1,10 +1,14 @@
 #__main__.py
+import sys, yaml
 def main():
     from PyQt5.QtWidgets import QApplication
     from Windows.mainWindow import MainWindow
-    import sys
+
+    with open(r"config\defaultConfig.yaml", "r") as file:
+        configData = yaml.safe_load(file)
+    print(configData)
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(configData)
     window.show()  # Windows by default are hidden.
     app.exec()
     
