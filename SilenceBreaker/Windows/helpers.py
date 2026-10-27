@@ -2,7 +2,9 @@ from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtWidgets import QWidget, QPushButton,QDial, QSlider, QLabel, QVBoxLayout, QHBoxLayout, QSlider,QLayout,QGridLayout, QSpinBox,QMessageBox 
 from PyQt5.QtCore import Qt
 from pathlib import Path
-import os, random, zipfile
+import os, random, zipfile, yaml
+import simplejson as json
+
 class Color(QWidget):
     def __init__(self, pColor):
         super().__init__()
@@ -182,18 +184,20 @@ class GridUIElement():
         self.name = pName #unique identifier
 
 class DirectoryHelper():
-
-    def __init__(self, project_name="SilenceBreaker", default_folder_name="LaughTrack"):
+    
+    def __init__(self, project_name="SilenceBreaker", default_folder_name="LaughTrack", default_config_folder_name="config"):
         self.home_dir = Path.home()
         self.project_name = project_name
-        self.default_folder_name = default_folder_name
+        self.default_sound_folder_name = default_folder_name
+        self.default_config_folder_name = default_config_folder_name
+        self.default_config_file_name = "config.json"
         self.documents_dir = self.home_dir / "Documents" / self.project_name
         self.current_dir = self.documents_dir
 
-    def establish_core_directories(self, pChanceDirectories):
+    def establish_core_sound_directories(self, pChanceDirectories):
         establishSounds = False
         self.documents_dir.mkdir(parents=True, exist_ok=True)
-        default_noise_folder = self.documents_dir / self.default_folder_name
+        default_noise_folder = self.documents_dir / self.default_sound_folder_name
 
         if not default_noise_folder.exists():
             establishSounds = True
@@ -206,6 +210,38 @@ class DirectoryHelper():
         self.current_dir = default_noise_folder
         self.create_sound_subfolders(pChanceDirectories)
 
+    def establish_config_directories(self, pConfigData):
+        default_config_folder = self.get_config_path()
+        default_config_file = self.get_config_file_path()
+        establishConfigs = False
+        default_config_folder.mkdir(parents=True,exist_ok=True)
+        if not default_config_file.exists() or default_config_file.stat().st_size == 0: #if file doesnt exist or is empty.
+            self.write_config_data(pConfigData, default_config_file)
+        
+    def write_config_data(self,pConfigData, pPath):
+        json_str = json.dumps(pConfigData, indent=4)
+        print(json_str)
+        pPath.touch(exist_ok=True)
+        with open(pPath, "w", encoding="utf-8") as json_file:
+            json_file.write(json_str)
+
+    def startup_get_config_data_and_load_values(self):
+        configData = self.load_default_config()
+        print(configData)
+        self.establish_config_directories(configData)
+        return self.get_config_data(self.get_config_file_path())
+    
+    def load_default_config(self):
+        configData = {}
+        with open(r"config\defaultConfig.yaml", "r") as file:
+            configData = yaml.safe_load(file)
+        return configData
+    
+    def get_config_data(self, pPath):
+        with open(pPath, "r", encoding="utf-8") as json_file:
+            data = json.load(json_file)
+        return data
+        
     def copy_sounds_to_default_directory(self):
         print("not implemented")
 
@@ -229,6 +265,8 @@ class DirectoryHelper():
     def get_working_directory(self):
         return self.current_dir
 
+    def get_config_path(self):
+        return self.documents_dir / self.default_config_folder_name
 
-        
-
+    def get_config_file_path(self):
+        return self.get_config_path() / self.default_config_file_name

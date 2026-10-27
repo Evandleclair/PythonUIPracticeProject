@@ -1,16 +1,27 @@
 #__main__.py
-import sys, yaml
+import sys, atexit
+
+
+def exit_method(pWindow, pDirectoryHelper):
+    print('exit')
+    
+
 def main():
     from PyQt5.QtWidgets import QApplication
     from Windows.mainWindow import MainWindow
-
-    with open(r"config\defaultConfig.yaml", "r") as file:
-        configData = yaml.safe_load(file)
-    print(configData)
+    from Windows.helpers import DirectoryHelper
+  
+    directoryHelper = DirectoryHelper()
+    configData = directoryHelper.startup_get_config_data_and_load_values()
+    
     app = QApplication(sys.argv)
-    window = MainWindow(configData)
+    window = MainWindow(configData,directoryHelper)
+    atexit.register(exit_method, window, directoryHelper)
+    app.aboutToQuit.connect(lambda: exit_method(window, directoryHelper))
     window.show()  # Windows by default are hidden.
-    app.exec()
+    sys.exit(app.exec_())
     
 if __name__ == "__main__":
     main()
+
+       
