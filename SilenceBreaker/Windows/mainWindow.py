@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
 
     chanceNames = {}
     
-    def __init__(self, pConfig):
+    def __init__(self, pConfig, pDirectoryHelper):
         super().__init__()
        
         try:
@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         try:
             #now that the logger is loaded, we can use that for our exceptions instead. 
             self.setWindowTitle("Python UI Practice")
-            self.establish_directories()
+            self.establish_directories(pDirectoryHelper)
             self.myPlayer = SoundPlayer()
             self.myTimer = RepeatTimer()
             self.define_unique_elements() #generate widget items that need to be referred to directly by this controller.
@@ -103,9 +103,10 @@ class MainWindow(QMainWindow):
         self.myPlayer.stop_sound()
         self.stopEvent()
 
-    def establish_directories(self):
-        self.myDirectoryHelper = DirectoryHelper()
-        self.myDirectoryHelper.establish_core_directories(self.chanceDirectories)
+    def establish_directories(self, pDirectoryHelper):
+        self.myDirectoryHelper = pDirectoryHelper
+        self.myDirectoryHelper.establish_core_sound_directories(self.chanceDirectories)
+        
 
     def start_timer(self):
         self.myTimer.set_interval(self.minIntervalSeconds,"min")
@@ -118,7 +119,10 @@ class MainWindow(QMainWindow):
         val = lower if p < lower else upper if p > upper else p
         self.volume = val
         self.volumeLabel.setText(str(val))
-        
+
+    def get_config_values(self):
+        return 
+    
     def chance_change(self,sliderId,p):
         try:
             self.chanceVariables[sliderId]=p #update changed slider to new value
