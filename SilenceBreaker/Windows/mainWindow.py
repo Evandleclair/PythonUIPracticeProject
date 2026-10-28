@@ -18,11 +18,15 @@ class MainWindow(QMainWindow):
     myPlayer = None
     myTimer = None
     myIntervalTimer = None
-
+    myConfig = {}
+ 
     stopEvent = None
 
     loopStarted = False #whether the program is active or not. 
     loopPaused = False 
+
+    triedLoadConfig = False #error flag on config load. 
+    resetConfigEvent = None
 
     currentSoundDirectory=""
     defaultSoundDirectory=""
@@ -52,7 +56,7 @@ class MainWindow(QMainWindow):
 
     chanceNames = {}
     
-    def __init__(self, pConfig, pDirectoryHelper):
+    def __init__(self, pConfig, pDirectoryHelper, pResetEvent):
         super().__init__()
        
         try:
@@ -66,6 +70,7 @@ class MainWindow(QMainWindow):
             self.establish_directories(pDirectoryHelper)
             self.myPlayer = SoundPlayer()
             self.myTimer = RepeatTimer()
+            self.resetConfigEvent=pResetEvent
             self.define_unique_elements() #generate widget items that need to be referred to directly by this controller.
             objList = self.generate_layout_objects()
             layout = QWidgetHelper.GenerateGridLayout(objList)
@@ -81,14 +86,35 @@ class MainWindow(QMainWindow):
             logger.error(f"Exception Occured: {e}")
 
     def load_config(self,pConfig):
-        self.chanceDirectories=dict(pConfig["chanceDirectories"])
-        self.chanceNames=dict(pConfig["chanceNames"])
+        try:
+            self.chanceDirectories=dict(pConfig["chanceDirectories"])
+            self.chanceNames=dict(pConfig["chanceNames"])
+            self.volume = pConfig["defaultSettings"]["defaultVolume"]
+            self.minIntervalSeconds=pConfig["defaultSettings"]["defaultMinInterval"]
+            self.maxIntervalSeconds=pConfig["defaultSettings"]["defaultMaxInterval"]
+            self.defaultLogFileName=pConfig["defaultSettings"]["defaultLogFileName"]
+            self.myConfig=pConfig #store config reference for later export. 
+        except Exception as e:
+            if self.triedLoadConfig == False:
+                 QWidgetHelper.generate_and_show_alert(f"Config load error: {e}")
+                 self.resetConfigEvent()
+                 self.triedLoadConfig=True
+            else:
+                strMessage = f"Failed to load valid config even after config reset. Please contact the developer. The following exception was raised: {e}"
+                QWidgetHelper.generate_and_show_alert(strMessage)
+                self.close() #if we cannot load config, do not continue
 
-        defaultSettings=dict(pConfig["defaultSettings"])
-        self.volume = defaultSettings.get("defaultVolume")
-        self.minIntervalSeconds=defaultSettings.get("defaultMinInterval")
-        self.maxIntervalSeconds=defaultSettings.get("defaultMaxInterval")
-        self.defaultLogFileName=defaultSettings.get("defaultLogFileName")
+    def export_config(self):
+        self.myConfig["chanceDirectories"] = self.chanceDirectories
+        self.myConfig["chanceNames"] = self.chanceNames
+
+        if "defaultSettings" not in self.myConfig:
+            self.myConfig["defaultSettings"] = {}
+
+        self.myConfig["defaultSettings"]["defaultVolume"] = self.volume
+        self.myConfig["defaultSettings"]["defaultMinInterval"] = self.minIntervalSeconds
+        self.myConfig["defaultSettings"]["defaultMaxInterval"] = self.maxIntervalSeconds
+        self.myConfig["defaultSettings"]["defaultLogFileName"] = self.defaultLogFileName
 
     def button_pressed(self,pText):
         print(pText)
