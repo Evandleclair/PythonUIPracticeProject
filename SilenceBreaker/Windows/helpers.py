@@ -215,21 +215,32 @@ class DirectoryHelper():
         default_config_file = self.get_config_file_path()
         establishConfigs = False
         default_config_folder.mkdir(parents=True,exist_ok=True)
-        if not default_config_file.exists() or default_config_file.stat().st_size == 0: #if file doesnt exist or is empty.
+        if not default_config_file.exists() or default_config_file.stat().st_size == 0 or not self.is_valid_json_file(default_config_file): #if file doesnt exist or is empty.
             self.write_config_data(pConfigData, default_config_file)
-        
+
+    @staticmethod
+    def is_valid_json_file(pPath):
+        try:
+            with open(pPath, 'r', encoding='utf-8') as f:
+                json.load(f)
+            return True
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Invalid JSON! Error: {e}")
+            return False
+    
     def write_config_data(self,pConfigData, pPath):
         json_str = json.dumps(pConfigData, indent=4)
-        print(json_str)
         pPath.touch(exist_ok=True)
         with open(pPath, "w", encoding="utf-8") as json_file:
             json_file.write(json_str)
 
     def startup_get_config_data_and_load_values(self):
         configData = self.load_default_config()
-        print(configData)
         self.establish_config_directories(configData)
         return self.get_config_data(self.get_config_file_path())
+
+    def reset_config_data(self):
+        self.write_config_data(self.load_default_config(), self.get_config_file_path())
     
     def load_default_config(self):
         configData = {}
