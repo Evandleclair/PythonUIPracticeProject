@@ -87,13 +87,20 @@ class MainWindow(QMainWindow):
 
     def load_config(self,pConfig):
         try:
-            self.chanceDirectories=dict(pConfig["chanceDirectories"])
-            self.chanceNames=dict(pConfig["chanceNames"])
-            self.volume = pConfig["defaultSettings"]["defaultVolume"]
-            self.minIntervalSeconds=pConfig["defaultSettings"]["defaultMinInterval"]
-            self.maxIntervalSeconds=pConfig["defaultSettings"]["defaultMaxInterval"]
-            self.defaultLogFileName=pConfig["defaultSettings"]["defaultLogFileName"]
-            self.myConfig=pConfig #store config reference for later export. 
+            chance_dirs_raw = pConfig.get("chanceDirectories", [])
+            self.chanceDirectories = {i: val for i, val in enumerate(chance_dirs_raw)}
+            
+            chance_names_raw = pConfig.get("chanceNames", [])
+            self.chanceNames = {i: val for i, val in enumerate(chance_names_raw)}
+            
+            # Use .get() with safe fallbacks so variables will not end up as a None
+            default_settings = pConfig.get("defaultSettings", {})
+            self.volume = default_settings.get("defaultVolume", 50)
+            self.minIntervalSeconds = default_settings.get("defaultMinInterval", 5)
+            self.maxIntervalSeconds = default_settings.get("defaultMaxInterval", 15)
+            self.defaultLogFileName = default_settings.get("defaultLogFileName", "SilenceBreaker.log")
+            
+            self.myConfig = pConfig  # Store config reference for later export
         except Exception as e:
             if self.triedLoadConfig == False:
                  QWidgetHelper.generate_and_show_alert(f"Config load error: {e}")
@@ -115,7 +122,8 @@ class MainWindow(QMainWindow):
         self.myConfig["defaultSettings"]["defaultMinInterval"] = self.minIntervalSeconds
         self.myConfig["defaultSettings"]["defaultMaxInterval"] = self.maxIntervalSeconds
         self.myConfig["defaultSettings"]["defaultLogFileName"] = self.defaultLogFileName
-
+        return self.myConfig
+    
     def button_pressed(self,pText):
         print(pText)
 
