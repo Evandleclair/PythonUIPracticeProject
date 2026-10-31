@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from pathlib import Path
 import os, random, zipfile, yaml
 import simplejson as json
+from typing import overload, Any, Optional
 
 class Color(QWidget):
     def __init__(self, pColor):
@@ -227,12 +228,23 @@ class DirectoryHelper():
         except (json.JSONDecodeError, ValueError) as e:
             print(f"Invalid JSON! Error: {e}")
             return False
-    
-    def write_config_data(self,pConfigData, pPath):
-        json_str = json.dumps(pConfigData, indent=4)
-        pPath.touch(exist_ok=True)
+        
+
+    @overload
+    def write_config_data(self, pConfigData: Any, pPath: Path) -> None: ...
+
+    @overload
+    def write_config_data(self, pConfigData: Any) -> None: ...
+
+    def write_config_data(self, pConfigData: Any, pPath: Optional[Path] = None) -> None:
+        targetPath = pPath if pPath is not None else self.get_config_file_path()
+        jsonString = json.dumps(pConfigData, indent=4)
+        targetPath.touch(exist_ok=True)
+        self.write_file(targetPath,jsonString)
+      
+    def write_file(self, pPath, pString):
         with open(pPath, "w", encoding="utf-8") as json_file:
-            json_file.write(json_str)
+            json_file.write(pString)
 
     def startup_get_config_data_and_load_values(self):
         configData = self.load_default_config()

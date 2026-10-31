@@ -4,6 +4,7 @@ from Windows.mainWindow import MainWindow
 
 def exit_method(pWindow, pDirectoryHelper):
     exportedConfig = pWindow.export_config()
+    pDirectoryHelper.write_config_data(exportedConfig)
     print(exportedConfig)
     
 
