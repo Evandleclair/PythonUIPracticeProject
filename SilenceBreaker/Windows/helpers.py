@@ -176,7 +176,7 @@ class DataHelpers():
         return chanceDictionary
 
 
-
+gProjectName = "SilenceBreaker"
 class GridUIElement():
     def __init__(self, pElement, pRow, pCol, pName = "none"):
         self.element = pElement
@@ -184,14 +184,76 @@ class GridUIElement():
         self.col = pCol
         self.name = pName #unique identifier
 
+class ConfigHelper():
+    def __init__(self, default_config_folder_name="config", file_write_method = None, project_name=gProjectName):
+        self.default_config_folder_name = default_config_folder_name
+        self.default_config_file_name = "config.json"
+        self.home_dir = Path.home()
+        self.project_name = project_name
+        self.documents_dir = self.home_dir / "Documents" / self.project_name
+        self.write_file_method = file_write_method
+
+    def establish_config_directories(self, pConfigData):
+            default_config_folder = self.get_config_path()
+            default_config_file = self.get_config_file_path()
+            establishConfigs = False
+            default_config_folder.mkdir(parents=True,exist_ok=True)
+            if not default_config_file.exists() or default_config_file.stat().st_size == 0 or not self.is_valid_json_file(default_config_file): #if file doesnt exist or is empty.
+                self.write_config_data(pConfigData, default_config_file)
+
+    def startup_get_config_data_and_load_values(self):
+        configData = self.load_default_config()
+        self.establish_config_directories(configData)
+        return self.get_config_data(self.get_config_file_path())
+
+    @staticmethod
+    def is_valid_json_file(pPath):
+        try:
+            with open(pPath, 'r', encoding='utf-8') as f:
+                json.load(f)
+            return True
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Invalid JSON! Error: {e}")
+            return False
+
+    @overload
+    def write_config_data(self, pConfigData: Any, pPath: Path) -> None: ...
+
+    @overload
+    def write_config_data(self, pConfigData: Any) -> None: ...
+
+    def write_config_data(self, pConfigData: Any, pPath: Optional[Path] = None) -> None:
+        targetPath = pPath if pPath is not None else self.get_config_file_path()
+        jsonString = json.dumps(pConfigData, indent=4)
+        targetPath.touch(exist_ok=True)
+        self.write_file_method(targetPath,jsonString)
+    
+    def reset_config_data(self):
+        self.write_config_data(self.load_default_config(), self.get_config_file_path())
+    
+    def load_default_config(self):
+        configData = {}
+        with open(r"config\defaultConfig.yaml", "r") as file:
+            configData = yaml.safe_load(file)
+        return configData
+    
+    def get_config_data(self, pPath):
+        with open(pPath, "r", encoding="utf-8") as json_file:
+            data = json.load(json_file)
+        return data
+    
+    def get_config_path(self):
+        return self.documents_dir / self.default_config_folder_name
+
+    def get_config_file_path(self):
+        return self.get_config_path() / self.default_config_file_name
+        
 class DirectoryHelper():
     
-    def __init__(self, project_name="SilenceBreaker", default_folder_name="LaughTrack", default_config_folder_name="config"):
+    def __init__(self, project_name=gProjectName, default_folder_name="LaughTrack", default_config_folder_name="config"):
         self.home_dir = Path.home()
         self.project_name = project_name
         self.default_sound_folder_name = default_folder_name
-        self.default_config_folder_name = default_config_folder_name
-        self.default_config_file_name = "config.json"
         self.documents_dir = self.home_dir / "Documents" / self.project_name
         self.current_dir = self.documents_dir
 
@@ -210,61 +272,12 @@ class DirectoryHelper():
 
         self.current_dir = default_noise_folder
         self.create_sound_subfolders(pChanceDirectories)
-
-    def establish_config_directories(self, pConfigData):
-        default_config_folder = self.get_config_path()
-        default_config_file = self.get_config_file_path()
-        establishConfigs = False
-        default_config_folder.mkdir(parents=True,exist_ok=True)
-        if not default_config_file.exists() or default_config_file.stat().st_size == 0 or not self.is_valid_json_file(default_config_file): #if file doesnt exist or is empty.
-            self.write_config_data(pConfigData, default_config_file)
-
-    @staticmethod
-    def is_valid_json_file(pPath):
-        try:
-            with open(pPath, 'r', encoding='utf-8') as f:
-                json.load(f)
-            return True
-        except (json.JSONDecodeError, ValueError) as e:
-            print(f"Invalid JSON! Error: {e}")
-            return False
         
-
-    @overload
-    def write_config_data(self, pConfigData: Any, pPath: Path) -> None: ...
-
-    @overload
-    def write_config_data(self, pConfigData: Any) -> None: ...
-
-    def write_config_data(self, pConfigData: Any, pPath: Optional[Path] = None) -> None:
-        targetPath = pPath if pPath is not None else self.get_config_file_path()
-        jsonString = json.dumps(pConfigData, indent=4)
-        targetPath.touch(exist_ok=True)
-        self.write_file(targetPath,jsonString)
       
     def write_file(self, pPath, pString):
         with open(pPath, "w", encoding="utf-8") as json_file:
             json_file.write(pString)
 
-    def startup_get_config_data_and_load_values(self):
-        configData = self.load_default_config()
-        self.establish_config_directories(configData)
-        return self.get_config_data(self.get_config_file_path())
-
-    def reset_config_data(self):
-        self.write_config_data(self.load_default_config(), self.get_config_file_path())
-    
-    def load_default_config(self):
-        configData = {}
-        with open(r"config\defaultConfig.yaml", "r") as file:
-            configData = yaml.safe_load(file)
-        return configData
-    
-    def get_config_data(self, pPath):
-        with open(pPath, "r", encoding="utf-8") as json_file:
-            data = json.load(json_file)
-        return data
-        
     def copy_sounds_to_default_directory(self):
         print("not implemented")
 
@@ -287,9 +300,3 @@ class DirectoryHelper():
 
     def get_working_directory(self):
         return self.current_dir
-
-    def get_config_path(self):
-        return self.documents_dir / self.default_config_folder_name
-
-    def get_config_file_path(self):
-        return self.get_config_path() / self.default_config_file_name

@@ -56,12 +56,12 @@ class MainWindow(QMainWindow):
 
     chanceNames = {}
     
-    def __init__(self, pConfig, pDirectoryHelper, pResetEvent):
+    def __init__(self, pConfig, pDirectoryHelper, pResetEvent, pLogger):
         super().__init__()
        
         try:
             self.load_config(pConfig)
-            logging.basicConfig(filename=self.defaultLogFileName, encoding='utf-8', level=logging.DEBUG)
+            logger = pLogger
         except Exception as e:
             print(f'Error {e} occured on initial launch of program')
         try:
@@ -81,17 +81,19 @@ class MainWindow(QMainWindow):
 
             # Set the central widget of the Window.
             self.setCentralWidget(container)
+
         except Exception as e:
-            QWidgetHelper.generate_and_show_alert(e)
-            logger.error(f"Exception Occured: {e}")
+            strExcept = f"Exception Occured during init: {e}"
+            QWidgetHelper.generate_and_show_alert(strExcept)
+            logger.error(strExcept)
 
     def load_config(self,pConfig):
         try:
-            chance_dirs_raw = pConfig.get("chanceDirectories", [])
-            self.chanceDirectories = {i: val for i, val in enumerate(chance_dirs_raw)}
+            chance_dirs_raw = pConfig.get("chanceDirectories", {})
+            self.chanceDirectories = {int(k): val for k, val in chance_dirs_raw.items()}
             
-            chance_names_raw = pConfig.get("chanceNames", [])
-            self.chanceNames = {i: val for i, val in enumerate(chance_names_raw)}
+            chance_names_raw = pConfig.get("chanceNames", {})
+            self.chanceNames = {int(k): val for k, val in chance_names_raw.items()}
             
             # Use .get() with safe fallbacks so variables will not end up as a None
             default_settings = pConfig.get("defaultSettings", {})
@@ -102,8 +104,10 @@ class MainWindow(QMainWindow):
             
             self.myConfig = pConfig  # Store config reference for later export
         except Exception as e:
+            strError = f"Exception Occured on load config: {e}"
+            logger.error(strError)
             if self.triedLoadConfig == False:
-                 QWidgetHelper.generate_and_show_alert(f"Config load error: {e}")
+                 QWidgetHelper.generate_and_show_alert(strError)
                  self.resetConfigEvent()
                  self.triedLoadConfig=True
             else:
@@ -131,7 +135,7 @@ class MainWindow(QMainWindow):
         if (self.myDirectoryHelper.check_sound_folder_exists()):
            self.start_timer()
         else:
-             QWidgetHelper.generate_and_show_alert("directory no exist")
+             QWidgetHelper.generate_and_show_alert("targeted sound directory did not exist. Please check your settings.")
 
     def stop_button_pressed(self):
         self.myPlayer.stop_sound()
@@ -180,7 +184,7 @@ class MainWindow(QMainWindow):
 
             self.update_volume_labels #once all calculation is done, update the labels.
         except Exception as e:
-                self.logger.error(f"Exception Occured: {e}")
+                self.logger.error(f"Exception Occured on chance update: {e}")
           
     def update_volume_labels(self):
         for id, label in self.volSliderLabels.items():
