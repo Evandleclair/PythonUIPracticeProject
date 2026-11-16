@@ -147,18 +147,16 @@ class DataHelpers():
     def pick_random(pDictionary):
         chanceDictionary = DataHelpers.generate_chance_dictionary(pDictionary)
 
-        print(chanceDictionary.items())
-
         if chanceDictionary[0][2] is None:
             raise ValueError
         while True:
             r = random.random()
-            print(f"random chance was {r}")
+            #print(f"random chance was {r}")
             for key, value in chanceDictionary.items():
               
                 lowOdds = value[0]
                 highOdds = value[1]
-                print(f"checking {key} with odds of {lowOdds} and {highOdds}")
+
                 if lowOdds <= r <highOdds:
                     print(f"which was between {lowOdds} and {highOdds} resulting in {key}")
                     return key
