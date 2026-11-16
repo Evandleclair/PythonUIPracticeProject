@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Python UI Practice")
             self.establish_directories(pDirectoryHelper)
             self.myPlayer = SoundPlayer()
+            self.myPlayer.set_volume(self.volume)
             self.myTimer = RepeatTimer()
             self.resetConfigEvent=pResetEvent
             self.define_unique_elements() #generate widget items that need to be referred to directly by this controller.
@@ -157,6 +158,7 @@ class MainWindow(QMainWindow):
         val = lower if p < lower else upper if p > upper else p
         self.volume = val
         self.volumeLabel.setText(str(val))
+        self.myPlayer.set_volume(val)
 
     def get_config_values(self):
         return 
@@ -215,6 +217,7 @@ class MainWindow(QMainWindow):
         print(activeSubfolder)
         randomSoundFile = self.myDirectoryHelper.get_random_file(activeSubfolder)
         print(f"playing {randomSoundFile}")
+        volDivided = (self.volume/100)
         self.myPlayer.play_sound_at_path(randomSoundFile)
 
 
